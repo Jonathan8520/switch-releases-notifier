@@ -1,4 +1,4 @@
-# scraper_cr.py
+# scraper_clashRoyal.py
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -8,7 +8,7 @@ from qrdecode import decode_qr_from_url
 
 URL = "https://www.pockettactics.com/clash-royale/codes"
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
-SEEN_FILE = "seen_cr.json"
+SEEN_FILE = "seen_clashRoyal.json"
 
 
 def fetch_qr_codes():

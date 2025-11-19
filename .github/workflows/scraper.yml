@@ -34,22 +34,22 @@ jobs:
       - name: Run Clash of Clans scraper
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python scraper_coc.py
+        run: python scraper_c.py
 
       # Lancer le scraper Clash Royale
       - name: Run Clash Royale scraper
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python scraper_cr.py
+        run: python scraper_clashRoyal.py
 
-      # Commit et push de seen_coc.json et seen_cr.json automatiquement
+      # Commit et push de seen_clashOfClans.json et seen_clashRoyal.json automatiquement
       - name: Auto commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update seen files"
           file_pattern: |
-            seen_coc.json
-            seen_cr.json
+            seen_clashOfClans.json
+            seen_clashRoyal.json
           commit_user_name: github-actions[bot]
           commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
         env:

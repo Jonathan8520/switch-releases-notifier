@@ -1,4 +1,4 @@
-# scraper_coc.py
+# scraper_clashOfClans.py
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -7,7 +7,7 @@ from storage import load_seen, save_seen
 
 URL = "https://www.ldplayer.net/blog/clash-of-clans-codes.html"
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
-SEEN_FILE = "seen_coc.json"
+SEEN_FILE = "seen_clashOfClans.json"
 
 
 def fetch_codes():
