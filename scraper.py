@@ -4,7 +4,7 @@ import json
 import os
 
 URL = "https://www.ldplayer.net/blog/clash-of-clans-codes.html"
-WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_COC")
 
 
 def fetch_codes():
@@ -45,7 +45,7 @@ def save_seen(seen):
 
 def main():
     if not WEBHOOK_URL:
-        print("Missing DISCORD_WEBHOOK environment variable.")
+        print("Missing DISCORD_WEBHOOK_COC environment variable.")
         return
 
     seen = load_seen()
