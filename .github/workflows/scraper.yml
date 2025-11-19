@@ -40,7 +40,7 @@ jobs:
 
       - name: 🔍 Run scraper
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_COC }}
         run: |
           python scraper.py
         continue-on-error: false

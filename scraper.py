@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 URL = "https://www.ldplayer.net/blog/clash-of-clans-codes.html"
-WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_COC")
 SEEN_FILE = Path("seen.json")
 MAX_RETRIES = 3
 TIMEOUT = 15
@@ -137,7 +137,7 @@ def main():
     
     # Vérification de la configuration
     if not WEBHOOK_URL:
-        log("❌ Variable d'environnement DISCORD_WEBHOOK manquante")
+        log("❌ Variable d'environnement DISCORD_WEBHOOK_COC manquante")
         sys.exit(1)
     
     # Envoie un heartbeat toutes les 10 exécutions (pour vérifier que ça tourne)

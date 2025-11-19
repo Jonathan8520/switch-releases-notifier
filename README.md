@@ -17,7 +17,7 @@ Scraper automatique qui surveille les nouveaux codes Clash of Clans et envoie de
 
 1. Va dans **Settings** → **Secrets and variables** → **Actions**
 2. Clique sur **New repository secret**
-3. Nom : `DISCORD_WEBHOOK`
+3. Nom : `DISCORD_WEBHOOK_COC`
 4. Valeur : colle l'URL de ton webhook Discord
 5. **Add secret**
 
@@ -68,7 +68,7 @@ C'est normal ! GitHub Actions peut retarder les crons de 5-15 minutes sur les re
 
 ### Pas de notifications Discord
 
-1. Vérifie que le secret `DISCORD_WEBHOOK` est bien configuré
+1. Vérifie que le secret `DISCORD_WEBHOOK_COC` est bien configuré
 2. Va dans **Actions** et regarde les logs d'exécution
 3. Lance manuellement le workflow pour tester
 
