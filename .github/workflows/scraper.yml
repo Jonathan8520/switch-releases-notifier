@@ -34,7 +34,7 @@ jobs:
       - name: Run Clash of Clans scraper
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python scraper_c.py
+        run: python scraper_clashOfClans.py
 
       # Lancer le scraper Clash Royale
       - name: Run Clash Royale scraper
