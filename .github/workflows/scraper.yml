@@ -2,32 +2,68 @@ name: Scrape Clash of Clans Codes
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # toutes les 5 minutes
-  workflow_dispatch:    # permet de lancer manuellement
+    # Toutes les 5 minutes (minimum GitHub, mais peut être retardé)
+    - cron: '*/5 * * * *'
+  
+  # Permet de lancer manuellement
+  workflow_dispatch:
+  
+  # Lance aussi au push (pour tester)
+  push:
+    branches: [main]
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
+    
+    # Timeout après 5 minutes max
+    timeout-minutes: 5
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Nécessaire pour pouvoir commit
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: 'pip'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: 📦 Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install beautifulsoup4 requests
 
-      - name: Run scraper
+      - name: 🔍 Run scraper
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python scraper.py
+        run: |
+          python scraper.py
+        continue-on-error: false
 
-      - name: Save updated seen.json
+      - name: 💾 Commit and push if changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update seen.json"
-          file_pattern: seen.json
+          commit_message: "🤖 Update seen codes [skip ci]"
+          file_pattern: "seen.json run_count.txt"
+          commit_user_name: "GitHub Actions Bot"
+          commit_user_email: "actions@github.com"
+          commit_author: "GitHub Actions <actions@github.com>"
+          skip_dirty_check: false
+          skip_fetch: false
+          skip_checkout: false
+          disable_globbing: false
+          
+      - name: 📊 Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-logs-${{ github.run_number }}
+          path: |
+            seen.json
+            run_count.txt
+          retention-days: 7
