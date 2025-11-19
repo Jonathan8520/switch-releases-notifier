@@ -1,10 +1,13 @@
+# scraper_coc.py
+import os
 import requests
 from bs4 import BeautifulSoup
-import json
-import os
+
+from storage import load_seen, save_seen
 
 URL = "https://www.ldplayer.net/blog/clash-of-clans-codes.html"
-WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_COC")
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
+SEEN_FILE = "seen_coc.json"
 
 
 def fetch_codes():
@@ -24,43 +27,31 @@ def fetch_codes():
 
 
 def notify_discord(item):
+    if not WEBHOOK_URL:
+        print("Missing DISCORD_WEBHOOK environment variable.")
+        return
+
     data = {
-        "content": f"🎉 Nouveau code Clash of Clans détecté !\n**{item['text']}**\nLien : {item['link']}"
+        "content": (
+            "🎉 Nouveau code Clash of Clans détecté !\n"
+            f"**{item['text']}**\n"
+            f"Lien : {item['link']}"
+        )
     }
     requests.post(WEBHOOK_URL, json=data, timeout=10)
 
 
-def load_seen():
-    if not os.path.exists("seen.json") or os.path.getsize("seen.json") == 0:
-        return set()
-
-    try:
-        with open("seen.json", "r") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        return set()
-
-    if isinstance(data, list):
-        return set(data)
-    return set()
-
-
-def save_seen(seen):
-    with open("seen.json", "w") as f:
-        json.dump(list(seen), f, indent=2)
-
-
 def main():
     if not WEBHOOK_URL:
-        print("Missing DISCORD_WEBHOOK_COC environment variable.")
+        print("Missing DISCORD_WEBHOOK environment variable.")
         return
 
-    seen = load_seen()
+    seen = load_seen(SEEN_FILE)
     codes = fetch_codes()
 
     new_items = []
     for c in codes:
-        identifier = c["text"] + "|" + c["link"]
+        identifier = f"COC|{c['text']}|{c['link']}"
         if identifier not in seen:
             new_items.append(c)
             seen.add(identifier)
@@ -68,10 +59,10 @@ def main():
     if new_items:
         for item in new_items:
             notify_discord(item)
-        save_seen(seen)
-        print(f"{len(new_items)} nouveaux codes détectés.")
+        save_seen(SEEN_FILE, seen)
+        print(f"{len(new_items)} nouveaux codes Clash of Clans détectés.")
     else:
-        print("Aucun nouveau code.")
+        print("Aucun nouveau code Clash of Clans.")
 
 
 if __name__ == "__main__":

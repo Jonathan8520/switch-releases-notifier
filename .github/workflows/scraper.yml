@@ -1,8 +1,8 @@
-name: Scrape Clash of Clans Codes
+name: Scrape Clash Codes
 
 on:
   schedule:
-    - cron: '0 12 * * 1' # tous les lundi à midi (UTC)
+    - cron: '0 12 * * 1' # tous les lundis à midi (UTC)
   workflow_dispatch:    # permet de lancer manuellement
 
 jobs:
@@ -22,22 +22,34 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Installer les dépendances
+      # Installer zbar (pour pyzbar / QR code)
+      - name: Install zbar
+        run: sudo apt-get update && sudo apt-get install -y libzbar0
+
+      # Installer les dépendances Python
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Lancer le scraper
-      - name: Run scraper
+      # Lancer le scraper Clash of Clans
+      - name: Run Clash of Clans scraper
         env:
-          DISCORD_WEBHOOK_COC: ${{ secrets.DISCORD_WEBHOOK_COC }}
-        run: python scraper.py
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python scraper_coc.py
 
-      # Commit et push de seen.json automatiquement
+      # Lancer le scraper Clash Royale
+      - name: Run Clash Royale scraper
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python scraper_cr.py
+
+      # Commit et push de seen_coc.json et seen_cr.json automatiquement
       - name: Auto commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update seen.json"
-          file_pattern: seen.json
+          commit_message: "Update seen files"
+          file_pattern: |
+            seen_coc.json
+            seen_cr.json
           commit_user_name: github-actions[bot]
           commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
         env:
