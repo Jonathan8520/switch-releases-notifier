@@ -2,7 +2,7 @@ name: Scrape Clash Codes
 
 on:
   schedule:
-    - cron: '0 12 * * 1' # tous les lundis à midi (UTC)
+    - cron: '0 12 * * *' # tous les midi (UTC)
   workflow_dispatch:    # permet de lancer manuellement
 
 jobs:
@@ -40,16 +40,16 @@ jobs:
       - name: Run Clash Royale scraper
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python scraper_clashRoyal.py
+        run: python scraper_clashRoyale.py
 
-      # Commit et push de seen_clashOfClans.json et seen_clashRoyal.json automatiquement
+      # Commit et push de seen_clashOfClans.json et seen_clashRoyale.json automatiquement
       - name: Auto commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update seen files"
           file_pattern: |
             seen_clashOfClans.json
-            seen_clashRoyal.json
+            seen_clashRoyale.json
           commit_user_name: github-actions[bot]
           commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
         env:

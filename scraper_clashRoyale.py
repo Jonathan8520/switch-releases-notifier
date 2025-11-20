@@ -1,4 +1,4 @@
-# scraper_clashRoyal.py
+# scraper_clashRoyale.py
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -8,7 +8,7 @@ from qrdecode import decode_qr_from_url
 
 URL = "https://www.pockettactics.com/clash-royale/codes"
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
-SEEN_FILE = "seen_clashRoyal.json"
+SEEN_FILE = "seen_clashRoyale.json"
 
 
 def fetch_qr_codes():
@@ -17,11 +17,21 @@ def fetch_qr_codes():
     soup = BeautifulSoup(resp.text, "html.parser")
 
     results = []
-    heading = soup.find("h2", string=lambda s: s and "Clash Royale QR codes" in s)
+    
+    # Trouve le h2 en vérifiant son texte complet (avec get_text)
+    heading = None
+    for h2 in soup.find_all("h2"):
+        if "qr code" in h2.get_text().lower():
+            heading = h2
+            break
+    
     if not heading:
         print("Section 'Clash Royale QR codes' non trouvée.")
         return results
 
+    print(f"✓ Section trouvée : {heading.get_text(strip=True)}")
+    
+    # Parcourir les éléments suivants
     for tag in heading.find_all_next():
         if tag.name == "h2":
             break
@@ -32,7 +42,7 @@ def fetch_qr_codes():
                 full_text = tag.get_text(" ", strip=True)
                 reward = full_text.replace("Reward:", "").strip()
 
-                # Trouver p précédent contenant l'image QR
+                # Trouver l'image QR dans le <p> précédent
                 img_url = None
                 prev = tag.find_previous_sibling("p")
                 while prev and not img_url:
@@ -43,16 +53,15 @@ def fetch_qr_codes():
                     prev = prev.find_previous_sibling("p")
 
                 if img_url:
-                    # 🔥 Decode du QR code !
                     decoded_url = decode_qr_from_url(img_url)
-
                     results.append(
                         {
                             "reward": reward,
                             "image": img_url,
-                            "qr_url": decoded_url,  # l’URL du voucher !
+                            "qr_url": decoded_url,
                         }
                     )
+                    print(f"  → QR trouvé : {reward}")
 
     return results
 
