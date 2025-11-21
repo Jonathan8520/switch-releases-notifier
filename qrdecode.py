@@ -1,11 +1,23 @@
 # qrdecode.py
 import requests
 from PIL import Image
-from pyzbar.pyzbar import decode
+try:
+    from pyzbar.pyzbar import decode
+except Exception:  # ImportError or missing native zbar lib -> keep module available
+    decode = None
+    # We intentionally avoid failing import here. If pyzbar isn't available then
+    # decode_qr_from_url will print a friendly message and return None so the
+    # calling scrapers can continue running without aborting.
 from io import BytesIO
 
 
 def decode_qr_from_url(url: str) -> str | None:
+    if not decode:
+        print(
+            "⚠️ pyzbar (or the ZBar native library) is not installed — skipping QR decode."
+        )
+        return None
+
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()

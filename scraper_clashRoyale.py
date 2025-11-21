@@ -8,7 +8,8 @@ from qrdecode import decode_qr_from_url
 
 URL = "https://www.pockettactics.com/clash-royale/codes"
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
-SEEN_FILE = "seen_clashRoyale.json"
+# Ensure we always read/write the seen file next to this script
+SEEN_FILE = os.path.join(os.path.dirname(__file__), "seen_clashRoyale.json")
 
 
 def fetch_qr_codes():
@@ -72,7 +73,7 @@ def notify_discord(item):
             "🃏 Nouveau QR code Clash Royale détecté !\n"
             f"**Reward : {item['reward']}**\n"
             f"QR : {item['qr_url']}\n"
-            f"Image : {item['image']}"
+            # f"Image : {item['image']}"
         )
     }
     requests.post(WEBHOOK_URL, json=data, timeout=10)
@@ -84,6 +85,7 @@ def main():
         return
 
     seen = load_seen(SEEN_FILE)
+    print(f"🔎 Loaded seen file: {SEEN_FILE} ({len(seen)} items)")
     qr_codes = fetch_qr_codes()
 
     new_items = []
@@ -96,6 +98,7 @@ def main():
     if new_items:
         for item in new_items:
             notify_discord(item)
+        print(f"🔧 Saving seen file: {SEEN_FILE}")
         save_seen(SEEN_FILE, seen)
         print(f"{len(new_items)} QR codes Clash Royale détectés.")
     else:

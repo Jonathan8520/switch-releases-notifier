@@ -7,7 +7,8 @@ from storage import load_seen, save_seen
 
 URL = "https://www.ldplayer.net/blog/clash-of-clans-codes.html"
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
-SEEN_FILE = "seen_clashOfClans.json"
+# Ensure we always read/write the seen file next to this script
+SEEN_FILE = os.path.join(os.path.dirname(__file__), "seen_clashOfClans.json")
 
 
 def fetch_codes():
@@ -47,6 +48,7 @@ def main():
         return
 
     seen = load_seen(SEEN_FILE)
+    print(f"🔎 Loaded seen file: {SEEN_FILE} ({len(seen)} items)")
     codes = fetch_codes()
 
     new_items = []
@@ -59,6 +61,7 @@ def main():
     if new_items:
         for item in new_items:
             notify_discord(item)
+        print(f"🔧 Saving seen file: {SEEN_FILE}")
         save_seen(SEEN_FILE, seen)
         print(f"{len(new_items)} nouveaux codes Clash of Clans détectés.")
     else:
