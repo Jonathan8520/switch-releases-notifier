@@ -2,8 +2,7 @@ name: Notifier for New Switch Releases
 
 on:
   schedule:
-    # Toutes les 15 minutes par exemple
-    - cron: "*/15 * * * *"
+    - cron: "*/15 * * * *"   # toutes les 15 minutes
   workflow_dispatch: {}
 
 jobs:
@@ -11,8 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # On récupère ton repo avec permissions d'écriture (indispensable pour commit)
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,3 +30,14 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.Releases_new_switch_TOKEN }}
         run: |
           python releases_new_switch.py
+
+      # Auto-commit seen_releases.json si modifié
+      - name: Auto commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update seen_releases.json"
+          file_pattern: seen_releases.json
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
