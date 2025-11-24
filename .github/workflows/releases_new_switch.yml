@@ -1,0 +1,30 @@
+name: Notifier for New Switch Releases
+
+on:
+  schedule:
+    # Toutes les 15 minutes par exemple
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run-notifier:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run Discord notifier
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.Releases_new_switch_TOKEN }}
+        run: |
+          python discord_srrdb_notifier.py
