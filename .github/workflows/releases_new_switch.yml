@@ -27,4 +27,4 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.Releases_new_switch_TOKEN }}
         run: |
-          python discord_srrdb_notifier.py
+          python releases_new_switch.py
