@@ -18,6 +18,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+          persist-credentials: true
 
       # Setup Python
       - name: Setup Python
@@ -44,6 +45,20 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: python scraper_clashRoyale.py
+
+      # Debugging: show git status / diff and seen files before auto-commit
+      - name: Debug workspace and seen files
+        run: |
+          echo "--- Workspace files ---"
+          ls -la
+          echo "--- Seen JSON files ---"
+          ls -l seen_*.json || true
+          echo "--- Git status (porcelain) ---"
+          git status --porcelain || true
+          echo "--- Git diff (names) ---"
+          git --no-pager diff --name-only || true
+          echo "--- seen_clashRoyale.json (head) ---"
+          sed -n '1,200p' seen_clashRoyale.json || true
 
       # Commit et push de seen_clashOfClans.json et seen_clashRoyale.json automatiquement
       - name: Auto commit changes
