@@ -96,10 +96,22 @@ def main():
             seen.add(identifier)
 
     if new_items:
+        # Sauvegarder d'abord les identifiants vus pour éviter les doublons
+        # si la notification Discord échoue (réexécution ne renverra pas les mêmes items).
+        try:
+            print(f"🔧 Saving seen file: {SEEN_FILE}")
+            save_seen(SEEN_FILE, seen)
+        except Exception as e:
+            print(f"Erreur en sauvegardant le fichier seen: {e}")
+
+        # Tenter d'envoyer les notifications; ne pas interrompre le programme
+        # si l'envoi échoue pour un des items.
         for item in new_items:
-            notify_discord(item)
-        print(f"🔧 Saving seen file: {SEEN_FILE}")
-        save_seen(SEEN_FILE, seen)
+            try:
+                notify_discord(item)
+            except Exception as e:
+                print(f"Erreur en notifiant Discord pour '{item.get('reward', '')}': {e}")
+
         print(f"{len(new_items)} QR codes Clash Royale détectés.")
     else:
         print("Aucun nouveau QR code.")
