@@ -61,14 +61,18 @@ jobs:
           sed -n '1,200p' seen_clashRoyale.json || true
 
       # Commit et push de seen_clashOfClans.json et seen_clashRoyale.json automatiquement
-      - name: Auto commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Update seen files"
-          file_pattern: |
-            seen_clashOfClans.json
-            seen_clashRoyale.json
-          commit_user_name: github-actions[bot]
-          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+      - name: Auto commit changes (explicit)
+        run: |
+          git --version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add seen_clashOfClans.json seen_clashRoyale.json || true
+          echo "Staged files:" && git diff --cached --name-only || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update seen files"
+            git push origin HEAD:$(echo ${GITHUB_REF#refs/heads/})
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
