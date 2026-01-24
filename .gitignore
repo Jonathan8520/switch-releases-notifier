@@ -1,3 +1,10 @@
-twitter_gamepass.py
-last_tweet_id.txt
-.github/workflows/twitter-gamepass-notifier.yml
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# User-specific data
+seen_releases.json
+
+# IDE/Tools
+.claude/

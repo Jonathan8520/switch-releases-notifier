@@ -29,7 +29,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.Releases_new_switch_TOKEN }}
         run: |
-          python releases_new_switch.py
+          python main.py
 
       # Auto-commit seen_releases.json si modifié
       - name: Auto commit changes
