@@ -343,11 +343,23 @@ def send_to_discord(payload: Dict[str, Any]) -> bool:
 
 def main() -> None:
     print("[INFO] Scanning srrdb…")
+
+    # Détecte le premier run (fichier inexistant)
+    first_run = not SEEN_FILE.exists()
     seen = load_seen()
 
     releases = scan_srrdb()
     if not releases:
         print("[INFO] No releases returned by srrdb.")
+        return
+
+    # Premier run : on marque tout comme vu sans notifier
+    if first_run:
+        print("[INFO] First run detected - initializing seen_releases.json without notifications.")
+        for release in releases:
+            seen.add(release["release"])
+        save_seen(seen)
+        print(f"[INFO] Marked {len(releases)} releases as seen.")
         return
 
     new_count = 0
