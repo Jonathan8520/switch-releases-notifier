@@ -3,8 +3,5 @@
 __pycache__/
 *.pyc
 
-# User-specific data
-seen_releases.json
-
 # IDE/Tools
 .claude/
