@@ -251,6 +251,21 @@ def get_info(release_name: str) -> Optional[Dict[str, Any]] | int:
 
 # --- Discord helpers ---
 
+# Couleurs par type
+COLORS = {
+    "Base": 0x2ECC71,    # Vert
+    "Update": 0x3498DB,  # Bleu
+    "DLC": 0x9B59B6,     # Violet
+}
+
+# Emojis par type
+EMOJIS = {
+    "Base": "🎮",
+    "Update": "🔄",
+    "DLC": "📦",
+}
+
+
 def detect_type_from_title(title: str) -> str:
     """
     Détection rapide à partir du nom :
@@ -279,6 +294,46 @@ def extract_group(title: str) -> str:
     return title.rsplit("-", 1)[1]
 
 
+def extract_version(title: str) -> Optional[str]:
+    """
+    Extrait la version d'un titre.
+    'Pokemon_Legends_Z-A_Update_v2.0.1_NSW-VENOM' -> 'v2.0.1'
+    """
+    match = re.search(r'[_\s](v\d+(?:\.\d+)*)', title, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return None
+
+
+def extract_clean_name(title: str) -> str:
+    """
+    Extrait le nom propre du jeu.
+    'Pokemon_Legends_Z-A_Update_v2.0.1_NSW-VENOM' -> 'Pokemon Legends Z-A'
+    """
+    name = title
+
+    # Retirer le groupe à la fin (NSW-VENOM)
+    if "-" in name:
+        name = name.rsplit("-", 1)[0]
+
+    # Retirer _NSW ou _NSW_ si présent
+    name = re.sub(r'_NSW_?$', '', name, flags=re.IGNORECASE)
+
+    # Retirer la version (v1.0.0, v2.1.3, etc.)
+    name = re.sub(r'_v\d+(?:\.\d+)*', '', name, flags=re.IGNORECASE)
+
+    # Retirer Update/UPD
+    name = re.sub(r'_(?:Update|UPD)_?', '', name, flags=re.IGNORECASE)
+
+    # Retirer DLC/DLC_Unlocker
+    name = re.sub(r'_(?:DLC(?:_Unlocker)?)', '', name, flags=re.IGNORECASE)
+
+    # Remplacer les underscores par des espaces
+    name = name.replace("_", " ").strip()
+
+    return name
+
+
 def build_eshop_url(masked_title_id: str) -> str:
     """
     Construit l'URL eShop à partir du TitleID base (masqué).
@@ -288,6 +343,13 @@ def build_eshop_url(masked_title_id: str) -> str:
     return f"https://ec.nintendo.com/apps/{masked_title_id}/FR"
 
 
+def build_srrdb_url(release_name: str) -> str:
+    """
+    Construit l'URL srrDB pour une release.
+    """
+    return f"https://www.srrdb.com/release/details/{release_name}"
+
+
 def build_discord_payload(release_info: Dict[str, Any]) -> Dict[str, Any]:
     title = release_info["title"]
     title_id = release_info["tid"]
@@ -295,28 +357,51 @@ def build_discord_payload(release_info: Dict[str, Any]) -> Dict[str, Any]:
     size = release_info["size"]
 
     release_type = detect_type_from_title(title)
-    source = extract_group(title)
+    group = extract_group(title)
+    version = extract_version(title)
+    clean_name = extract_clean_name(title)
 
     eshop_url = build_eshop_url(masked_tid)
+    srrdb_url = build_srrdb_url(title)
 
-    description = (
-        f"**Nom :** `{title}`{NEWLINE}"
-        f"**Type :** `{release_type}`{NEWLINE}"
-        f"**TitleID :** `{title_id}`{NEWLINE}"
-        f"**Taille :** `{size}`{NEWLINE}"
-        f"**Source :** `{source}`{NEWLINE}{NEWLINE}"
-        f"Voir sur l'eShop : {eshop_url}"
-    )
+    emoji = EMOJIS.get(release_type, "🎮")
+    color = COLORS.get(release_type, 0x00FFE0)
+
+    # Fields pour un layout propre
+    fields = []
+
+    if version:
+        fields.append({
+            "name": "📦 Version",
+            "value": f"`{version}`",
+            "inline": True
+        })
+
+    fields.append({
+        "name": "🎮 TitleID",
+        "value": f"`{title_id}`",
+        "inline": True
+    })
+
+    fields.append({
+        "name": "💾 Taille",
+        "value": f"`{size}`",
+        "inline": True
+    })
 
     embed: Dict[str, Any] = {
-        "title": "Nouvelle release Switch",
-        "description": description,
-        "color": 0x00FFE0,
+        "title": f"{emoji} {clean_name}",
+        "url": srrdb_url,
+        "description": f"[🛒 Voir sur l'eShop]({eshop_url})",
+        "color": color,
+        "fields": fields,
         "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
         "thumbnail": {
-            # L'image utilise le TitleID masqué/base (update / DLC compris)
             "url": release_info["thumb"],
         },
+        "footer": {
+            "text": group
+        }
     }
 
     return {"embeds": [embed]}
