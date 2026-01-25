@@ -404,7 +404,11 @@ def build_discord_payload(release_info: Dict[str, Any]) -> Dict[str, Any]:
         }
     }
 
-    return {"embeds": [embed]}
+    return {
+        "username": "Switch Releases",
+        "avatar_url": "https://raw.githubusercontent.com/Jonathan8520/switch-releases-notifier/main/profile.png",
+        "embeds": [embed]
+    }
 
 
 def send_to_discord(payload: Dict[str, Any]) -> bool:
