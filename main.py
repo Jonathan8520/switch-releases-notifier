@@ -31,6 +31,9 @@ SRRDB_ADD_URL = "https://www.srrdb.com/download/temp/{release_name}/{add_id}/{fi
 # Tinfoil: image (cover) uniquement
 TINFOIL_IMAGE_URL = "https://tinfoil.media/ti/{title_id}/1024/1024/"
 
+# Nintendo eShop redirection URL
+NINTENDO_EC_URL = "https://ec.nintendo.com/apps/{title_id}/FR"
+
 # Discord
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 if not DISCORD_WEBHOOK:
@@ -175,6 +178,75 @@ def humansize(size: int) -> str:
     return f"{size_str} {suffixes[index]}"
 
 
+def get_nintendo_image(masked_tid: str) -> Optional[str]:
+    """
+    Récupère l'image depuis Nintendo en suivant la redirection ec.nintendo.com.
+    Retourne l'URL de l'image ou None si non trouvée.
+    """
+    ec_url = NINTENDO_EC_URL.format(title_id=masked_tid)
+    
+    try:
+        resp = requests.get(ec_url, timeout=10, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }, allow_redirects=True)
+        
+        if resp.status_code != 200:
+            return None
+        
+        # Chercher l'image dans le banner Nintendo
+        # <img ... class="img-responsive" src="https://www.nintendo.com/eu/media/images/...">
+        pattern = r'<img[^>]+class="img-responsive"[^>]+src="(https://www\.nintendo\.com/[^"]+)"'
+        match = re.search(pattern, resp.text)
+        
+        if match:
+            return match.group(1)
+        
+        # Fallback: chercher og:image
+        og_pattern = r'<meta[^>]+property="og:image"[^>]+content="(https://[^"]+)"'
+        og_match = re.search(og_pattern, resp.text)
+        if og_match:
+            return og_match.group(1)
+        
+        # Fallback: image dans share_images
+        share_pattern = r'"(https://www\.nintendo\.com/eu/media/images/10_share_images/[^"]+)"'
+        share_match = re.search(share_pattern, resp.text)
+        if share_match:
+            return share_match.group(1)
+            
+        return None
+        
+    except requests.RequestException:
+        return None
+
+
+def get_thumb_url(masked_tid: str) -> Optional[str]:
+    """
+    Récupère l'URL de la vignette.
+    1. Essaie Tinfoil d'abord
+    2. Si échec, essaie Nintendo
+    3. Si tout échoue, retourne None
+    """
+    # Essayer Tinfoil
+    tinfoil_url = TINFOIL_IMAGE_URL.format(title_id=masked_tid)
+    try:
+        resp = requests.head(tinfoil_url, timeout=5, allow_redirects=True)
+        if resp.status_code == 200:
+            return tinfoil_url
+    except requests.RequestException:
+        pass
+    
+    print(f"[THUMB] Tinfoil unavailable for {masked_tid}, trying Nintendo...")
+    
+    # Essayer Nintendo
+    nintendo_url = get_nintendo_image(masked_tid)
+    if nintendo_url:
+        print(f"[THUMB] Found Nintendo image for {masked_tid}")
+        return nintendo_url
+    
+    print(f"[THUMB] No image found for {masked_tid}")
+    return None
+
+
 def get_info(release_name: str) -> Optional[Dict[str, Any]] | int:
     """
     Récupère les infos complètes d'une release :
@@ -245,7 +317,7 @@ def get_info(release_name: str) -> Optional[Dict[str, Any]] | int:
         "crc": crc,
         "proof": proof_url,
         "nfo": nfo_url,
-        "thumb": TINFOIL_IMAGE_URL.format(title_id=masked_title_id),
+        "thumb": get_thumb_url(masked_title_id),
     }
 
 
@@ -396,13 +468,14 @@ def build_discord_payload(release_info: Dict[str, Any]) -> Dict[str, Any]:
         "color": color,
         "fields": fields,
         "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-        "thumbnail": {
-            "url": release_info["thumb"],
-        },
         "footer": {
             "text": group
         }
     }
+
+    # Ajouter la thumbnail seulement si elle existe
+    if release_info.get("thumb"):
+        embed["thumbnail"] = {"url": release_info["thumb"]}
 
     return {
         "username": "Switch Releases",
