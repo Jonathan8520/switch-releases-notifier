@@ -10,7 +10,7 @@ Get Discord notifications when new Nintendo Switch releases appear on [srrDB](ht
 - Sends rich Discord embeds with:
   - Release name, type (Base/Update/DLC), and size
   - TitleID with link to Nintendo eShop
-  - Game cover image from Tinfoil
+  - Game cover image from Tinfoil (with Nintendo eShop fallback)
 - Tracks already-notified releases to avoid duplicates
 - Runs automatically via GitHub Actions (free)
 
@@ -55,7 +55,7 @@ srrDB API  →  Parse NFO for TitleID  →  Discord webhook
 2. Downloads and parses NFO files to extract TitleID
 3. Masks TitleID to get the base game ID (for cover images and eShop links)
 4. Sends a Discord embed with all release information
-5. Saves seen releases to `seen_releases.json` to avoid duplicates
+5. Saves seen releases to `seen_releases.json` (on the `datas` branch) to avoid duplicates
 
 ## Manual trigger
 
