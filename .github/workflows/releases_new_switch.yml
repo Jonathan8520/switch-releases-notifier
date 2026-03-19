@@ -41,9 +41,9 @@ jobs:
       # Commit seen_releases.json sur la branche datas
       - name: Push seen_releases.json to datas
         run: |
-          git stash -- seen_releases.json
+          cp seen_releases.json /tmp/seen_releases.json
           git checkout datas
-          git stash pop
+          cp /tmp/seen_releases.json seen_releases.json
           git add seen_releases.json
           git diff --cached --quiet && exit 0
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Update seen_releases.json"
