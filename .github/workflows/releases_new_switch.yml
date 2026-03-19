@@ -10,11 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # On récupère ton repo avec permissions d'écriture (indispensable pour commit)
-      - name: Checkout repository
+      # Checkout main pour le code
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # Récupérer seen_releases.json depuis la branche datas
+      - name: Get seen_releases.json from datas
+        run: |
+          git checkout origin/datas -- seen_releases.json
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,13 +38,13 @@ jobs:
         run: |
           python main.py
 
-      # Auto-commit seen_releases.json si modifié
-      - name: Auto commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Update seen_releases.json"
-          file_pattern: seen_releases.json
-          commit_user_name: github-actions[bot]
-          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Commit seen_releases.json sur la branche datas
+      - name: Push seen_releases.json to datas
+        run: |
+          git stash -- seen_releases.json
+          git checkout datas
+          git stash pop
+          git add seen_releases.json
+          git diff --cached --quiet && exit 0
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Update seen_releases.json"
+          git push origin datas
