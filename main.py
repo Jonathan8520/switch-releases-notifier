@@ -306,8 +306,12 @@ def get_info(release_name: str) -> Optional[Dict[str, Any]] | int:
 
     title_id, masked_title_id = parse_result
 
-    size = humansize(details["archived-files"][0]["size"])
-    crc = details["archived-files"][0]["crc"]
+    archived = details.get("archived-files")
+    if not archived:
+        return None
+
+    size = humansize(archived[0]["size"])
+    crc = archived[0]["crc"]
 
     return {
         "tid": title_id,
