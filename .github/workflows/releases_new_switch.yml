@@ -38,10 +38,14 @@ jobs:
         run: |
           python main.py
 
-      # Commit seen_releases.json sur la branche datas
+      # Commit seen_releases.json sur la branche datas.
+      # always() : même si le notifier plante, les releases déjà envoyées
+      # doivent être persistées, sinon elles sont renvoyées au run suivant.
       - name: Push seen_releases.json to datas
+        if: always()
         run: |
           cp seen_releases.json /tmp/seen_releases.json
+          git reset --hard HEAD
           git checkout datas
           cp /tmp/seen_releases.json seen_releases.json
           git add seen_releases.json

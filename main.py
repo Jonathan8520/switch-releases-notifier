@@ -156,8 +156,14 @@ def parse_nfo(nfo_url: str) -> Optional[Tuple[str, str]] | int:
         print(f"[NFO] Could not parse Title ID from {nfo_url}")
         return None
 
-    title_id = title_id.group().replace("X", "0")
-    masked_title_id = mask_title_id(title_id)
+    # Le regex est IGNORECASE : les placeholders peuvent être 'X' ou 'x'
+    title_id = title_id.group().upper().replace("X", "0")
+
+    try:
+        masked_title_id = mask_title_id(title_id)
+    except ValueError:
+        print(f"[NFO] Invalid Title ID '{title_id}' in {nfo_url}")
+        return None
 
     if title_id not in CACHE["nfos"]:
         CACHE["nfos"][title_id] = nfo_text
@@ -488,21 +494,43 @@ def build_discord_payload(release_info: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def send_to_discord(payload: Dict[str, Any]) -> bool:
+def send_to_discord(payload: Dict[str, Any], max_retries: int = 3) -> bool:
     """
     Envoie sur Discord, retourne True si 2xx, False sinon.
-    """
-    try:
-        resp = requests.post(DISCORD_WEBHOOK, json=payload, timeout=10)
-    except requests.RequestException as exc:
-        print(f"[DISCORD] request error: {exc}")
-        return False
 
-    if resp.status_code not in range(200, 299):
+    Gère le rate limit (429) : Discord renvoie le délai d'attente dans
+    `retry_after` (JSON) ou l'en-tête `Retry-After`. On attend puis on
+    réessaie, sinon la release serait renvoyée au run suivant.
+    """
+    for attempt in range(max_retries):
+        try:
+            resp = requests.post(DISCORD_WEBHOOK, json=payload, timeout=10)
+        except requests.RequestException as exc:
+            print(f"[DISCORD] request error: {exc}")
+            return False
+
+        if resp.status_code in range(200, 299):
+            return True
+
+        if resp.status_code == 429:
+            try:
+                retry_after = float(resp.json().get("retry_after", 0))
+            except Exception:
+                retry_after = 0.0
+
+            if not retry_after:
+                retry_after = float(resp.headers.get("Retry-After", 5))
+
+            wait = retry_after + 0.5
+            print(f"[DISCORD] rate limited, waiting {wait:.1f}s (attempt {attempt + 1}/{max_retries})")
+            time.sleep(wait)
+            continue
+
         print(f"[DISCORD] error {resp.status_code}: {resp.text[:200]}")
         return False
 
-    return True
+    print("[DISCORD] giving up after repeated rate limits.")
+    return False
 
 
 # --- Main: un run (adapté CRON / GitHub Actions) ---
@@ -540,7 +568,14 @@ def main() -> None:
             print(f"[INFO] {name} has no NFO, skipping.")
             continue
 
-        info = get_info(name)
+        try:
+            info = get_info(name)
+        except Exception as exc:
+            # Une release cassée ne doit jamais faire planter tout le run :
+            # sinon le seen_releases.json n'est pas poussé et tout est renvoyé.
+            print(f"[WARN] Unexpected error while processing {name}: {exc!r}")
+            continue
+
         if not info or isinstance(info, int):
             print(f"[WARN] Could not get info for {name}: {info}")
             continue
@@ -557,8 +592,8 @@ def main() -> None:
         else:
             print(f"[WARN] Discord send failed for {name}, not marking as seen.")
 
-        # Petit délai pour ne pas spam Discord
-        time.sleep(1)
+        # Le webhook Discord tolère ~30 messages / 60s : on reste en dessous.
+        time.sleep(2)
 
     if new_count == 0:
         print("[INFO] No new releases to send.")
