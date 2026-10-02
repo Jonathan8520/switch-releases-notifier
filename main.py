@@ -184,6 +184,18 @@ def humansize(size: int) -> str:
     return f"{size_str} {suffixes[index]}"
 
 
+IMAGE_PLACEHOLDERS = ("grey.gif",)
+
+
+def _first_real_image(pattern: str, text: str) -> Optional[str]:
+    """Premier match du pattern qui n'est pas un placeholder de lazy-load."""
+    for match in re.finditer(pattern, text):
+        url = match.group(1).strip()
+        if not url.endswith(IMAGE_PLACEHOLDERS):
+            return url
+    return None
+
+
 def get_nintendo_image(masked_tid: str) -> Optional[str]:
     """
     Récupère l'image depuis Nintendo en suivant la redirection ec.nintendo.com.
@@ -201,24 +213,28 @@ def get_nintendo_image(masked_tid: str) -> Optional[str]:
         
         # Chercher l'image dans le banner Nintendo
         # <img ... class="img-responsive" src="https://www.nintendo.com/eu/media/images/...">
+        # Sur les pages récentes, les captures sont en lazy-load : leur src est un
+        # placeholder grey.gif (1x1 px) qu'il faut ignorer.
         pattern = r'<img[^>]+class="img-responsive"[^>]+src="(https://www\.nintendo\.com/[^"]+)"'
-        match = re.search(pattern, resp.text)
-        
-        if match:
-            return match.group(1)
-        
-        # Fallback: chercher og:image
-        og_pattern = r'<meta[^>]+property="og:image"[^>]+content="(https://[^"]+)"'
-        og_match = re.search(og_pattern, resp.text)
-        if og_match:
-            return og_match.group(1)
-        
+        url = _first_real_image(pattern, resp.text)
+        if url:
+            return url
+
+        # Fallback: og:image / twitter:image (le content peut commencer par un retour à la ligne)
+        for meta_pattern in (
+            r'<meta[^>]+property="og:image"[^>]+content="\s*(https://[^"\s]+)\s*"',
+            r'<meta[^>]+name="twitter:image"[^>]+content="\s*(https://[^"\s]+)\s*"',
+        ):
+            url = _first_real_image(meta_pattern, resp.text)
+            if url:
+                return url
+
         # Fallback: image dans share_images
         share_pattern = r'"(https://www\.nintendo\.com/eu/media/images/10_share_images/[^"]+)"'
-        share_match = re.search(share_pattern, resp.text)
-        if share_match:
-            return share_match.group(1)
-            
+        url = _first_real_image(share_pattern, resp.text)
+        if url:
+            return url
+
         return None
         
     except requests.RequestException:
