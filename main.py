@@ -487,10 +487,10 @@ def build_discord_payload(release_info: Dict[str, Any]) -> Dict[str, Any]:
         "inline": True
     })
 
-    # Liens sous la taille (le titre de l'embed renvoie déjà vers l'eShop)
+    # Lien vers la source sous la taille (le titre de l'embed renvoie vers l'eShop)
     fields.append({
         "name": "\u200b",
-        "value": f"[🛒 Voir sur l'eShop]({eshop_url}) · [📄 Voir la source]({srrdb_url})",
+        "value": f"[📄 Voir la source]({srrdb_url})",
         "inline": False
     })
 
