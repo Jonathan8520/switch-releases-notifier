@@ -487,10 +487,16 @@ def build_discord_payload(release_info: Dict[str, Any]) -> Dict[str, Any]:
         "inline": True
     })
 
+    # Liens sous la taille (le titre de l'embed renvoie déjà vers l'eShop)
+    fields.append({
+        "name": "\u200b",
+        "value": f"[🛒 Voir sur l'eShop]({eshop_url}) · [📄 Voir la source]({srrdb_url})",
+        "inline": False
+    })
+
     embed: Dict[str, Any] = {
         "title": f"{emoji} {clean_name}",
-        "url": srrdb_url,
-        "description": f"[🛒 Voir sur l'eShop]({eshop_url})",
+        "url": eshop_url,
         "color": color,
         "fields": fields,
         "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z"),
